@@ -1,1 +1,3 @@
 # shitarabathreads_to_html
+したらばのrawmodeをhtmlに変換、保存するスクリプトです。変換したいURLを引数にすれば使えます。
+Python3.5で動作。
