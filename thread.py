@@ -88,9 +88,7 @@ for line in f:
                 result += data[i] + " "
             elif i == 3:
                 resultid = idfirst + data[6]
-                print(resultid)
                 result += data[i] + resultid + "<br>"
-                print(result)
             elif i == 4:
                 m = replaceanker.search(data[i])
                 if m:
