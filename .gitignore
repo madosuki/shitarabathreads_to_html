@@ -1,0 +1,6 @@
+__pycache__
+*.dat
+*.html
+.DS_Store
+._*
+thumbs.db

@@ -6,142 +6,122 @@ import urllib.request
 import codecs
 import re
 
-argvs = sys.argv
-argc = len(argvs)
+class Threads:
+    def __init__(self):
+        self.replaceanker = re.compile(r'\<a\shref\=\"\/bbs\/read\.cgi\/[a-zA-Z]*\/\d*\/\d*\/(\d*)\"\starget\=\"\_blank\"\>')
+        self.replaceReadCGItoRAWMode = re.compile(r'read\.cgi')
 
-filename = "tinput.html"
+        self.filename = "tinput.html"
 
-count = 1
+        self.result = '<body bgcolor="#EFEFEF">\n'
 
-data = ""
+        self.idfirst = " ID:"
+        self.namecolor = "<font color=\"#008800\"\>"
+        self.namecolorclose = "</font>"
+        self.jumpname = "<a id="
+        self.jumpnameclose = ">"
+        self.jumpnameclose2 = "</a>"
+    
+    def download(self, path, url):
+        ReadorRaw = self.replaceReadCGItoRAWMode.search(url)
+        if ReadorRaw:
+            url = url.replace("read.cgi", "rawmode.cgi")
+            te = os.path.exists(path)
+        if not te:
+            local_file, headers = urllib.request.urlretrieve(url, path)
 
-result = '<body bgcolor="#EFEFEF">\n'
+    def openf(self, Fname):
+        return codecs.open(Fname, 'r', 'euc-jp')
 
-idfirst = " ID:"
-namecolor = "<font color=\"#008800\"\>"
-namecolorclose = "</font>"
-jumpname = "<a id="
-jumpnameclose = ">"
-jumpnameclose2 = "</a>"
+    def numlink(self, num):
+        hikaku = int(num)
+        if hikaku == 1:
+            tmp = '<div id="' + num + '">' + '<a href="#' + num + '">' + num + self.jumpnameclose2 + ' '
+        elif hikaku >= 2:
+            tmp = "\n" + "<br><br><br>" + "<div id=\"" + num + "\">" + "<a href=\"#" + num + "\"" +  ">" + num + self.jumpnameclose2 +  " "
+        return tmp
 
-numline = ""
+    def fline(self):
+        tmpf = self.openf(self.filename)
+        tmplines = tmpf.readlines()
+        getlines = len(tmplines)
+        return getlines
 
-#pattern = re.compile(r'ttps?://[\w/:%#\$&\?\(\)~\.=\+\-]+')
-replaceanker = re.compile(r'\<a\shref\=\"\/bbs\/read\.cgi\/[a-zA-Z]*\/\d*\/\d*\/(\d*)\"\starget\=\"\_blank\"\>') #返信アンカのリンクをHTML内のレス番号に飛ぶようにする処理に使う正規表現
-replaceReadCGItoRAWMode = re.compile(r'read\.cgi') #"rawmode.cgiではなくread.cgiだった場合にrawmodeへ置き換える際に使う"
-#replaceanker = re.compile(r'\<a\shref\=\"/bbs/read\.cgi/[a-zA-Z]*/\d*/\d*/(\d*)\"\starget\=\"\_blank\"\>')
+    def ReturnFileName(self):
+        return self.filename
 
-def download(s):
-    url = argvs[1]
-    ReadorRaw = replaceReadCGItoRAWMode.search(url)
-    if ReadorRaw:
-        url = url.replace("read.cgi", "rawmode.cgi")
-    te = os.path.exists(s)
-    if not te:
-        local_file, headers = urllib.request.urlretrieve(url, s)
+    def ReturnThreadTitle(self):
+        return self.result
 
-def openf(Fname):
-    return codecs.open(Fname, 'r', 'euc-jp')
+    def SetThreadTitle(self, s):
+        self.result = s
 
-def numlink(num):
-    hikaku = int(num)
-    if hikaku == 1:
-        tmp = '<div id="' + num + '">' + '<a href="#' + num + '">' + num + jumpnameclose2 + ' '
-    elif hikaku >= 2:
-        tmp = "\n" + "<br><br><br>" + "<div id=\"" + num + "\">" + "<a href=\"#" + num + "\"" +  ">" + num + jumpnameclose2 +  " "
-    return tmp
+    def DatToHTML(self, filename):
+        count = 1
+        f = self.openf(filename)
+        for line in f:
+            data = u"".join(line).split("<>")
+            if count == 1:
+                threadtitle = data[5] + "\n" + "<br><br>"
+                self.result += threadtitle
+                for i in range(6):
+                    if i == 0:
+                        self.result += "<html lang=ja><head></head><body>"
+                        self.result += self.numlink(data[i])
+                    elif i == 1:
+                        tmp = data[i].replace("<b>", "</b>")
+                        tmp = tmp.replace("</b>", "<b>", 1)
+                        self.result += "名前：" +  self.namecolor + tmp + self.namecolorclose + " "
+                    elif i == 2:
+                        self.result += data[i] + " "
+                    elif i == 3:
+                        resultid = self.idfirst + data[6]
+                        self.result += data[i] + resultid + "<br>"
+                    elif i == 4:
+                        m = self.replaceanker.search(data[i])
+                        if m:
+                            moto = m.group()
+                            okikae = m.group(1)
+                            replacestr = '<a href=\"#' + okikae + '">'
+                            lastokikae = '#' + okikae
+                            latest = data[i].replace(moto, replacestr)
+                            self.result += latest + "\n</div>"
+                        else:
+                            self.result += data[i] + "\n</div>"
+                        count = 2
 
-def fline():
-    tmpf = openf(filename)
-    tmplines = tmpf.readlines()
-    getlines = len(tmplines)
-    return getlines
+            if count == 2:
+                for n in range(5):
+                    if n == 0:
+                        self.result += self.numlink(data[n])
+                    elif n == 1:
+                        tmp = data[n].replace("<b>", "</b>")
+                        tmp = tmp.replace("</b>", "<b>", 1)
+                        self.result += "名前：" +  self.namecolor + tmp + self.namecolorclose + " "
+                    elif n == 2:
+                        self.result += data[n] + " "
+                    elif n == 3:
+                        resultid = self.idfirst + data[6]
+                        self.result += data[n] + resultid + "<br>"
+                    elif n == 4:
+                        m = self.replaceanker.search(data[n])
+                        if m:
+                            moto = m.group()
+                            okikae = m.group(1)
+                            replacestr = '<a href=\"#' + okikae + '">'
+                            lastokikae = '#' + okikae
+                            latest = data[n].replace(moto, replacestr)
+                            self.result += latest + "\n</div>"
+                        else:
+                            self.result += data[n] + "\n</div>"
 
-if argc >= 2:
-    download(filename)
-else:
-    print("引数がありません")
-    exit()
+        self.result += "</body>"
 
-#f = codecs.open('tinput.html', 'r', 'euc-jp')
+        count = 3
+        f.close()
 
-f = openf(filename)
-
-#/bbs/read.cgi/otaku/15956/1472906650/2
-
-for line in f:
-    #data += line.split("<>")
-    data = u"".join(line).split("<>")
-    if count == 1:
-        threadtitle = data[5] + "\n" + "<br><br>"
-        result += threadtitle
-        for i in range(6):
-            if i == 0:
-                #result += "<div id=\"" + data[i] + "\">" "<a href=\"#" + data[i] + "\"" +  ">" + data[i] + jumpnameclose2 + "</a>" + " "
-                result += "<html lang=ja><head></head><body>"
-                result += numlink(data[i])
-            elif i == 1:
-                tmp = data[i].replace("<b>", "</b>")
-                tmp = tmp.replace("</b>", "<b>", 1)
-                result += "名前：" +  namecolor + tmp + namecolorclose + " "
-            elif i == 2:
-                result += data[i] + " "
-            elif i == 3:
-                resultid = idfirst + data[6]
-                result += data[i] + resultid + "<br>"
-            elif i == 4:
-                m = replaceanker.search(data[i])
-                if m:
-                    moto = m.group()
-                    okikae = m.group(1)
-                    replacestr = '<a href=\"#' + okikae + '">'
-                    lastokikae = '#' + okikae
-                    latest = data[i].replace(moto, replacestr)
-                    result += latest + "\n</div>"
-                else:
-                    result += data[i] + "\n</div>"
-                count = 2
-            #elif i == 5:
-            #    threadtitle = "<br><br><br><br>" + data[i] + "<br>"
-            #    result += threadtitle
-            #    count = 2
-    if count == 2:
-        for n in range(5):
-            if n == 0:
-                #result += "\r\n" + "<br><br><br>" + "<div id=\"" + data[n] + "\">" + "<a href=\"#" + data[n] + "\"" +  ">" + data[n] + jumpnameclose2 + "</a>" + " "
-                result += numlink(data[n])
-            elif n == 1:
-                tmp = data[n].replace("<b>", "</b>")
-                tmp = tmp.replace("</b>", "<b>", 1)
-                result += "名前：" +  namecolor + tmp + namecolorclose + " "
-            elif n == 2:
-                result += data[n] + " "
-            elif n == 3:
-                resultid = idfirst + data[6]
-                result += data[n] + resultid + "<br>"
-            elif n == 4:
-                m = replaceanker.search(data[n])
-                if m:
-                    moto = m.group()
-                    okikae = m.group(1)
-                    replacestr = '<a href=\"#' + okikae + '">'
-                    lastokikae = '#' + okikae
-                    latest = data[n].replace(moto, replacestr)
-                    result += latest + "\n</div>"
-                else:
-                    result += data[n] + "\n</div>"
-
-#data = "".join(str(e) for e in f.readlines())
-result += "</body>"
-
-count = 3
-f.close()
-
-
-lastresult = result.replace("<br>", "<br>\n")
-lastresult += "</body></html>"
-o = codecs.open("o.html", "w", "utf-8")
-o.write(lastresult)
-o.close()
-
-numline = fline()
+        lastresult = self.result.replace("<br>", "<br>\n")
+        lastresult += "</body></html>"
+        o = codecs.open("o.html", "w", "utf-8")
+        o.write(lastresult)
+        o.close()
