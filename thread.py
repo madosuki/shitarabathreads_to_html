@@ -11,8 +11,6 @@ class Threads:
         self.replaceanker = re.compile(r'\<a\shref\=\"\/bbs\/read\.cgi\/[a-zA-Z]*\/\d*\/\d*\/(\d*)\"\starget\=\"\_blank\"\>')
         self.replaceReadCGItoRAWMode = re.compile(r'read\.cgi')
 
-        self.filename = "tinput.html"
-
         self.result = '<body bgcolor="#EFEFEF">\n'
 
         self.idfirst = " ID:"
@@ -41,14 +39,11 @@ class Threads:
             tmp = "\n" + "<br><br><br>" + "<div id=\"" + num + "\">" + "<a href=\"#" + num + "\"" +  ">" + num + self.jumpnameclose2 +  " "
         return tmp
 
-    def fline(self):
-        tmpf = self.openf(self.filename)
+    def GetTextLineFromFile(self, filename):
+        tmpf = self.openf(filename)
         tmplines = tmpf.readlines()
         getlines = len(tmplines)
         return getlines
-
-    def ReturnFileName(self):
-        return self.filename
 
     def ReturnThreadTitle(self):
         return self.result
@@ -56,7 +51,7 @@ class Threads:
     def SetThreadTitle(self, s):
         self.result = s
 
-    def DatToHTML(self, filename):
+    def DatToHTML(self, filename, outname):
         count = 1
         f = self.openf(filename)
         for line in f:
@@ -122,6 +117,6 @@ class Threads:
 
         lastresult = self.result.replace("<br>", "<br>\n")
         lastresult += "</body></html>"
-        o = codecs.open("o.html", "w", "utf-8")
+        o = codecs.open(outname, "w", "utf-8")
         o.write(lastresult)
         o.close()
