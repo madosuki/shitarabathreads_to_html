@@ -117,6 +117,10 @@ class Threads:
 
         lastresult = self.result.replace("<br>", "<br>\n")
         lastresult += "</body></html>"
+
+        self.WriteFile(lastresult, outname)
+
+    def WriteFile(self, text, outname):
         o = codecs.open(outname, "w", "utf-8")
-        o.write(lastresult)
+        o.write(text)
         o.close()
